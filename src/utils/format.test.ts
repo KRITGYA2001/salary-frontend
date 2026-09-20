@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDate, formatMoney, formatUsd } from './format';
+import { formatChangePercent, formatDate, formatMoney, formatUsd } from './format';
 
 describe('format', () => {
   it('formats money in the given currency without decimals', () => {
@@ -14,5 +14,17 @@ describe('format', () => {
   it('formats ISO dates and tolerates invalid input', () => {
     expect(formatDate('2021-03-05')).toBe('5 Mar 2021');
     expect(formatDate('nonsense')).toBe('-');
+  });
+});
+
+describe('formatChangePercent', () => {
+  it('formats raises and cuts with a sign', () => {
+    expect(formatChangePercent(100, 112.5)).toBe('+12.5%');
+    expect(formatChangePercent(200, 150)).toBe('-25%');
+  });
+
+  it('returns null without a usable previous salary', () => {
+    expect(formatChangePercent(null, 100)).toBeNull();
+    expect(formatChangePercent(0, 100)).toBeNull();
   });
 });

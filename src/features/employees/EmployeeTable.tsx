@@ -1,6 +1,7 @@
 import {
   Box,
   Chip,
+  Link,
   Paper,
   Skeleton,
   Table,
@@ -13,6 +14,7 @@ import {
   TableSortLabel,
   Typography,
 } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 import type { Employee, PageResponse } from '../../api/types';
 import { colors } from '../../theme/tokens';
 import { formatDate, formatMoney, formatUsd } from '../../utils/format';
@@ -64,7 +66,14 @@ function EmployeeRow({ employee }: { employee: Employee }) {
   return (
     <TableRow hover>
       <TableCell>
-        <Typography sx={{ fontWeight: 600 }}>{employee.fullName}</Typography>
+        <Link
+          component={RouterLink}
+          to={`/employees/${employee.id}`}
+          underline="hover"
+          sx={{ fontWeight: 600, color: 'text.primary' }}
+        >
+          {employee.fullName}
+        </Link>
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {employee.employeeCode} · {employee.email}
         </Typography>

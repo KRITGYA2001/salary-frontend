@@ -28,3 +28,22 @@ export function formatDate(isoDate: string): string {
   const parsed = new Date(`${isoDate}T00:00:00`);
   return Number.isNaN(parsed.getTime()) ? FALLBACK_TEXT : dateFormatter.format(parsed);
 }
+
+const percentFormatter = new Intl.NumberFormat('en-US', {
+  style: 'percent',
+  maximumFractionDigits: 1,
+  signDisplay: 'exceptZero',
+});
+
+/** Relative change between two salaries, or null when there is no previous salary to compare. */
+export function formatChangePercent(previous: number | null, current: number): string | null {
+  return previous === null || previous === 0 ? null : percentFormatter.format((current - previous) / previous);
+}
+
+const EMPLOYMENT_TYPE_LABELS: Record<string, string> = {
+  FULL_TIME: 'Full time',
+  PART_TIME: 'Part time',
+  CONTRACT: 'Contract',
+};
+
+export const formatEmploymentType = (type: string): string => EMPLOYMENT_TYPE_LABELS[type] ?? type;

@@ -59,3 +59,13 @@ export interface PageResponse<T> {
   totalItems: number;
   totalPages: number;
 }
+
+export interface SalaryHistoryEntry {
+  id: number;
+  oldSalary: number | null;
+  newSalary: number;
+  currency: string;
+  effectiveDate: string;
+  reason: string;
+  changedAt: string;
+}

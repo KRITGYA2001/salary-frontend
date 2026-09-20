@@ -6,7 +6,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './App';
 import { createQueryClient } from './api/queryClient';
-import type { Employee, FilterOptions, PageResponse } from './api/types';
+import type { Employee, FilterOptions, PageResponse, SalaryHistoryEntry } from './api/types';
 import { theme } from './theme/theme';
 
 const FILTERS: FilterOptions = {
@@ -44,9 +44,34 @@ const pageOf = (items: Employee[]): PageResponse<Employee> => ({
 
 let fetchMock: ReturnType<typeof vi.fn>;
 
-function stubApi(employees: Employee[]) {
+const HISTORY: SalaryHistoryEntry[] = [
+  {
+    id: 2,
+    oldSalary: 2500000,
+    newSalary: 3000000,
+    currency: 'INR',
+    effectiveDate: '2024-04-01',
+    reason: 'Annual review',
+    changedAt: '2024-04-01T09:00:00Z',
+  },
+  {
+    id: 1,
+    oldSalary: null,
+    newSalary: 2500000,
+    currency: 'INR',
+    effectiveDate: '2021-03-05',
+    reason: 'Initial salary',
+    changedAt: '2021-03-05T09:00:00Z',
+  },
+];
+
+function stubApi(employees: Employee[], history: SalaryHistoryEntry[] = HISTORY) {
   fetchMock = vi.fn(async (url: string) => {
     if (url.includes('/meta/filters')) return Response.json(FILTERS);
+    if (url.includes('/salary-history')) return Response.json(history);
+    if (/\/employees\/\d+$/.test(url)) {
+      return employees.length ? Response.json(employees[0]) : Response.json({ error: { code: 'NOT_FOUND', message: 'x' } }, { status: 404 });
+    }
     if (url.includes('/employees')) return Response.json(pageOf(employees));
     return Response.json({ status: 'UP' });
   });
@@ -143,5 +168,37 @@ describe('Employees page', () => {
     renderAt('/employees');
 
     expect(await screen.findByRole('button', { name: 'Retry' })).toBeInTheDocument();
+  });
+});
+
+describe('Employee detail page', () => {
+  it('shows the employee and salary history with percentage change', async () => {
+    renderAt('/employees/1');
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Asha Rao' })).toBeInTheDocument();
+    expect(await screen.findByText('Started at ₹2,500,000')).toBeInTheDocument();
+    expect(screen.getByText(/₹2,500,000 to ₹3,000,000/)).toBeInTheDocument();
+    expect(screen.getByText('+20%')).toBeInTheDocument();
+    expect(screen.getByText('Annual review')).toBeInTheDocument();
+  });
+
+  it('shows an empty state when there is no salary history', async () => {
+    stubApi([ASHA], []);
+    renderAt('/employees/1');
+
+    expect(await screen.findByText('No salary changes yet')).toBeInTheDocument();
+  });
+
+  it('shows a not-found state for an unknown employee', async () => {
+    stubApi([]);
+    renderAt('/employees/999');
+
+    expect(await screen.findByText('Employee not found')).toBeInTheDocument();
+  });
+
+  it('links to the detail page from the employee list', async () => {
+    renderAt('/employees');
+
+    expect(await screen.findByRole('link', { name: 'Asha Rao' })).toHaveAttribute('href', '/employees/1');
   });
 });
