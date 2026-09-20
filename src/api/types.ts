@@ -29,3 +29,33 @@ export interface FilterOptions {
   departments: Department[];
   jobTitles: JobTitle[];
 }
+
+export type EmployeeStatus = 'ACTIVE' | 'INACTIVE';
+export type EmploymentType = 'FULL_TIME' | 'PART_TIME' | 'CONTRACT';
+
+export interface Employee {
+  id: number;
+  employeeCode: string;
+  fullName: string;
+  email: string;
+  departmentId: number;
+  department: string;
+  jobTitleId: number;
+  jobTitle: string;
+  countryCode: string;
+  countryName: string;
+  currency: string;
+  employmentType: EmploymentType;
+  salary: number;
+  salaryUsd: number;
+  hireDate: string;
+  status: EmployeeStatus;
+}
+
+export interface PageResponse<T> {
+  items: T[];
+  page: number;
+  size: number;
+  totalItems: number;
+  totalPages: number;
+}
