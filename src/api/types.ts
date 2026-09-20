@@ -90,3 +90,24 @@ export interface ChangeSalaryRequest {
   effectiveDate: string;
   reason: string;
 }
+
+export interface SalaryStats {
+  headcount: number;
+  averageUsd: number | null;
+  medianUsd: number | null;
+  p90Usd: number | null;
+  minUsd: number | null;
+  maxUsd: number | null;
+}
+
+export interface GroupSalaryStats {
+  key: string;
+  label: string;
+  stats: SalaryStats;
+}
+
+export interface SalaryBucket {
+  fromUsd: number;
+  toUsd: number;
+  count: number;
+}
