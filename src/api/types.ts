@@ -69,3 +69,24 @@ export interface SalaryHistoryEntry {
   reason: string;
   changedAt: string;
 }
+
+export interface CreateEmployeeRequest {
+  fullName: string;
+  email: string;
+  departmentId: number;
+  jobTitleId: number;
+  countryCode: string;
+  employmentType: EmploymentType;
+  salary: number;
+  hireDate: string;
+}
+
+export type UpdateEmployeeRequest = Partial<
+  Pick<CreateEmployeeRequest, 'fullName' | 'email' | 'departmentId' | 'jobTitleId' | 'employmentType'>
+>;
+
+export interface ChangeSalaryRequest {
+  newSalary: number;
+  effectiveDate: string;
+  reason: string;
+}

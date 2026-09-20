@@ -1,9 +1,15 @@
 import { Alert, Box, Button, Chip, Paper, Skeleton, Stack, Typography } from '@mui/material';
-import { ArrowLeft, UserCircle } from '@phosphor-icons/react';
+import { ArrowLeft, CurrencyCircleDollar, PencilSimple, UserCircle, UserMinus } from '@phosphor-icons/react';
+import { useState } from 'react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 import { ApiError } from '../api/client';
 import type { Employee } from '../api/types';
+import { useFilterOptions } from '../api/meta';
+import { useNotify } from '../components/Notifications';
 import { EmptyState } from '../components/EmptyState';
+import { ChangeSalaryDialog } from '../features/employees/ChangeSalaryDialog';
+import { DeactivateDialog } from '../features/employees/DeactivateDialog';
+import { EmployeeFormDialog } from '../features/employees/EmployeeFormDialog';
 import { SalaryHistoryPanel } from '../features/employees/SalaryHistoryPanel';
 import { useEmployee, useSalaryHistory } from '../features/employees/useEmployeeDetail';
 import { colors } from '../theme/tokens';
@@ -39,6 +45,14 @@ function Fact({ label, value }: { label: string; value: string }) {
 function EmployeeOverview({ employee }: { employee: Employee }) {
   const isActive = employee.status === 'ACTIVE';
   const history = useSalaryHistory(employee.id);
+  const options = useFilterOptions();
+  const notify = useNotify();
+  const [dialog, setDialog] = useState<'edit' | 'salary' | 'deactivate' | null>(null);
+  const closeDialog = () => setDialog(null);
+  const finish = (message: string) => () => {
+    closeDialog();
+    notify(message);
+  };
   return (
     <>
       <Stack direction="row" sx={{ alignItems: 'center', gap: 1.5, flexWrap: 'wrap', mb: 0.5 }}>
@@ -55,9 +69,43 @@ function EmployeeOverview({ employee }: { employee: Employee }) {
           }}
         />
       </Stack>
-      <Typography sx={{ color: 'text.secondary', mb: 4 }}>
+      <Typography sx={{ color: 'text.secondary', mb: 2 }}>
         {employee.jobTitle}, {employee.department} · {employee.employeeCode}
       </Typography>
+      <Stack direction="row" sx={{ gap: 1, flexWrap: 'wrap', mb: 4 }}>
+        {isActive && (
+          <Button
+            variant="contained"
+            startIcon={<CurrencyCircleDollar size={18} aria-hidden />}
+            onClick={() => setDialog('salary')}
+          >
+            Change salary
+          </Button>
+        )}
+        <Button variant="outlined" startIcon={<PencilSimple size={18} aria-hidden />} onClick={() => setDialog('edit')}>
+          Edit details
+        </Button>
+        {isActive && (
+          <Button color="inherit" startIcon={<UserMinus size={18} aria-hidden />} onClick={() => setDialog('deactivate')}>
+            Deactivate
+          </Button>
+        )}
+      </Stack>
+      {dialog === 'edit' && (
+        <EmployeeFormDialog
+          open
+          employee={employee}
+          options={options.data}
+          onClose={closeDialog}
+          onSaved={finish('Employee details saved')}
+        />
+      )}
+      {dialog === 'salary' && (
+        <ChangeSalaryDialog open employee={employee} onClose={closeDialog} onSaved={finish('Salary updated')} />
+      )}
+      {dialog === 'deactivate' && (
+        <DeactivateDialog open employee={employee} onClose={closeDialog} onDone={finish('Employee deactivated')} />
+      )}
 
       <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', md: '5fr 7fr' }, alignItems: 'start' }}>
         <Paper sx={{ p: 3 }}>

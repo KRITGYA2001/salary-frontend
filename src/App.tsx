@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
+import { NotificationProvider } from './components/Notifications';
 import { AppShell } from './layout/AppShell';
 import { EmployeeDetailPage } from './pages/EmployeeDetailPage';
 import { EmployeesPage } from './pages/EmployeesPage';
@@ -7,14 +8,16 @@ import { NotFoundPage } from './pages/NotFoundPage';
 
 export function App() {
   return (
-    <Routes>
-      <Route element={<AppShell />}>
-        <Route index element={<Navigate to="/employees" replace />} />
-        <Route path="employees" element={<EmployeesPage />} />
-        <Route path="employees/:id" element={<EmployeeDetailPage />} />
-        <Route path="insights" element={<InsightsPage />} />
-        <Route path="*" element={<NotFoundPage />} />
-      </Route>
-    </Routes>
+    <NotificationProvider>
+      <Routes>
+        <Route element={<AppShell />}>
+          <Route index element={<Navigate to="/employees" replace />} />
+          <Route path="employees" element={<EmployeesPage />} />
+          <Route path="employees/:id" element={<EmployeeDetailPage />} />
+          <Route path="insights" element={<InsightsPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
+      </Routes>
+    </NotificationProvider>
   );
 }

@@ -1,8 +1,12 @@
 import { Alert, Button } from '@mui/material';
-import { MagnifyingGlass } from '@phosphor-icons/react';
+import { MagnifyingGlass, Plus } from '@phosphor-icons/react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useNotify } from '../components/Notifications';
 import { useFilterOptions } from '../api/meta';
 import { EmptyState } from '../components/EmptyState';
 import { PageHeader } from '../components/PageHeader';
+import { EmployeeFormDialog } from '../features/employees/EmployeeFormDialog';
 import { EmployeeFilterBar } from '../features/employees/EmployeeFilterBar';
 import { EmployeeTable } from '../features/employees/EmployeeTable';
 import { useEmployeeFilters } from '../features/employees/useEmployeeFilters';
@@ -12,6 +16,9 @@ export function EmployeesPage() {
   const { filters, updateFilters } = useEmployeeFilters();
   const options = useFilterOptions();
   const employees = useEmployees(filters);
+  const [isAdding, setIsAdding] = useState(false);
+  const navigate = useNavigate();
+  const notify = useNotify();
 
   const isEmpty = employees.data !== undefined && employees.data.totalItems === 0;
 
@@ -20,7 +27,24 @@ export function EmployeesPage() {
       <PageHeader
         title="Employees"
         description="Find anyone, compare pay across countries and keep every salary change on record."
+        actions={
+          <Button variant="contained" startIcon={<Plus size={18} aria-hidden />} onClick={() => setIsAdding(true)}>
+            Add employee
+          </Button>
+        }
       />
+      {isAdding && (
+        <EmployeeFormDialog
+          open
+          options={options.data}
+          onClose={() => setIsAdding(false)}
+          onSaved={(created) => {
+            setIsAdding(false);
+            notify(`${created.fullName} was added`);
+            navigate(`/employees/${created.id}`);
+          }}
+        />
+      )}
       <EmployeeFilterBar filters={filters} options={options.data} onChange={updateFilters} />
       {employees.isError ? (
         <Alert

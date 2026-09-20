@@ -66,6 +66,10 @@ export async function apiRequest<T>(
 export const apiGet = <T>(path: string, params?: QueryParams, signal?: AbortSignal) =>
   apiRequest<T>(path, { params, signal });
 
+export const apiPost = <T>(path: string, body?: unknown) => apiRequest<T>(path, { method: 'POST', body: body ?? {} });
+
+export const apiPatch = <T>(path: string, body: unknown) => apiRequest<T>(path, { method: 'PATCH', body });
+
 /** Reports whether the backend answers its health probe. */
 export async function fetchApiHealth(signal?: AbortSignal): Promise<boolean> {
   const response = await fetch(HEALTH_PATH, { signal });

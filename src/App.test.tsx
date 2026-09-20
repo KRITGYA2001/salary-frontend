@@ -202,3 +202,147 @@ describe('Employee detail page', () => {
     expect(await screen.findByRole('link', { name: 'Asha Rao' })).toHaveAttribute('href', '/employees/1');
   });
 });
+
+interface RecordedRequest {
+  method: string;
+  url: string;
+  body: unknown;
+}
+
+/** Serves the standard fixtures and answers writes with `writeResponse`, recording every write. */
+function stubApiWithWrites(writeResponse: () => Response) {
+  const writes: RecordedRequest[] = [];
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string, init?: RequestInit) => {
+      const method = init?.method ?? 'GET';
+      if (method !== 'GET') {
+        writes.push({ method, url, body: JSON.parse(String(init?.body)) });
+        return writeResponse();
+      }
+      if (url.includes('/meta/filters')) return Response.json(FILTERS);
+      if (url.includes('/salary-history')) return Response.json(HISTORY);
+      if (/\/employees\/\d+$/.test(url)) return Response.json(ASHA);
+      if (url.includes('/employees')) return Response.json(pageOf([ASHA]));
+      return Response.json({ status: 'UP' });
+    }),
+  );
+  return writes;
+}
+
+const errorResponse = (status: number, code: string, message: string, details?: Record<string, string>) =>
+  Response.json({ error: { code, message, details } }, { status });
+
+describe('Change salary dialog', () => {
+  async function openDialog() {
+    const user = userEvent.setup();
+    renderAt('/employees/1');
+    await user.click(await screen.findByRole('button', { name: 'Change salary' }));
+    return user;
+  }
+
+  it('validates required fields before calling the API', async () => {
+    const writes = stubApiWithWrites(() => Response.json(ASHA));
+    const user = await openDialog();
+
+    await user.click(screen.getByRole('button', { name: 'Save salary' }));
+
+    expect(await screen.findAllByText('This field is required')).toHaveLength(2);
+    expect(writes).toHaveLength(0);
+  });
+
+  it('posts the change, confirms it and refreshes the employee', async () => {
+    const writes = stubApiWithWrites(() => Response.json(ASHA));
+    const user = await openDialog();
+
+    await user.type(screen.getByLabelText(/New annual salary/), '3,300,000');
+    await user.type(screen.getByLabelText('Reason'), 'Promotion');
+    await user.click(screen.getByRole('button', { name: 'Save salary' }));
+
+    expect(await screen.findByText('Salary updated')).toBeInTheDocument();
+    expect(writes).toHaveLength(1);
+    expect(writes[0].url).toBe('/api/v1/employees/1/salary');
+    expect(writes[0].body).toMatchObject({ newSalary: 3300000, reason: 'Promotion' });
+    const detailFetches = vi.mocked(fetch).mock.calls.filter(([url]) => /\/employees\/1$/.test(String(url)));
+    expect(detailFetches.length).toBeGreaterThan(1);
+  });
+
+  it('shows field errors returned by the API next to the input', async () => {
+    stubApiWithWrites(() =>
+      errorResponse(400, 'VALIDATION_FAILED', 'Request validation failed', { reason: 'size must be at most 200' }),
+    );
+    const user = await openDialog();
+
+    await user.type(screen.getByLabelText(/New annual salary/), '3300000');
+    await user.type(screen.getByLabelText('Reason'), 'x');
+    await user.click(screen.getByRole('button', { name: 'Save salary' }));
+
+    expect(await screen.findByText('size must be at most 200')).toBeInTheDocument();
+  });
+
+  it('shows conflicts as a message inside the dialog', async () => {
+    stubApiWithWrites(() =>
+      errorResponse(409, 'CONFLICT', 'Salary was changed by someone else, please reload and retry'),
+    );
+    const user = await openDialog();
+
+    await user.type(screen.getByLabelText(/New annual salary/), '3300000');
+    await user.type(screen.getByLabelText('Reason'), 'Promotion');
+    await user.click(screen.getByRole('button', { name: 'Save salary' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('changed by someone else');
+  });
+});
+
+const SLOW_FLOW_TIMEOUT_MS = 20000;
+
+async function fillHireForm(user: ReturnType<typeof userEvent.setup>) {
+    await user.type(screen.getByLabelText('Full name'), 'Asha Rao');
+    await user.type(screen.getByLabelText('Email'), 'asha@acme.com');
+    await user.click(screen.getByRole('combobox', { name: 'Department' }));
+    await user.click(await screen.findByRole('option', { name: 'Engineering' }));
+    await user.click(screen.getByRole('combobox', { name: 'Job title' }));
+    await user.click(await screen.findByRole('option', { name: 'Software Engineer' }));
+    await user.click(screen.getByRole('combobox', { name: 'Country' }));
+    await user.click(await screen.findByRole('option', { name: 'India' }));
+    await user.type(screen.getByLabelText('Annual salary (INR)'), '3000000');
+    await user.click(screen.getByRole('button', { name: 'Add employee', hidden: false }));
+}
+
+describe('Add employee dialog', () => {
+  it('submits the hire request and opens the new employee', async () => {
+    const writes = stubApiWithWrites(() => Response.json(ASHA, { status: 201 }));
+    const user = userEvent.setup();
+    renderAt('/employees');
+    await user.click(await screen.findByRole('button', { name: 'Add employee' }));
+
+    await fillHireForm(user);
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Asha Rao' })).toBeInTheDocument();
+    expect(writes[0]).toMatchObject({
+      method: 'POST',
+      url: '/api/v1/employees',
+      body: {
+        fullName: 'Asha Rao',
+        email: 'asha@acme.com',
+        departmentId: 1,
+        jobTitleId: 1,
+        countryCode: 'IN',
+        employmentType: 'FULL_TIME',
+        salary: 3000000,
+      },
+    });
+  }, SLOW_FLOW_TIMEOUT_MS);
+
+  it('shows a duplicate email conflict without closing the dialog', async () => {
+    stubApiWithWrites(() => errorResponse(409, 'CONFLICT', 'An employee with this email already exists'));
+    const user = userEvent.setup();
+    renderAt('/employees');
+    await user.click(await screen.findByRole('button', { name: 'Add employee' }));
+
+    await fillHireForm(user);
+
+    expect(await screen.findByText('An employee with this email already exists')).toBeInTheDocument();
+    expect(screen.getByLabelText('Full name')).toHaveValue('Asha Rao');
+  }, SLOW_FLOW_TIMEOUT_MS);
+});
