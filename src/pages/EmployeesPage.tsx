@@ -1,5 +1,5 @@
-import { Alert, Button } from '@mui/material';
-import { MagnifyingGlass, Plus } from '@phosphor-icons/react';
+import { Alert, Button, Stack } from '@mui/material';
+import { DownloadSimple, MagnifyingGlass, Plus } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotify } from '../components/Notifications';
@@ -9,6 +9,7 @@ import { PageHeader } from '../components/PageHeader';
 import { EmployeeFormDialog } from '../features/employees/EmployeeFormDialog';
 import { EmployeeFilterBar } from '../features/employees/EmployeeFilterBar';
 import { EmployeeTable } from '../features/employees/EmployeeTable';
+import { toExportUrl } from '../features/employees/employeeFilters';
 import { useEmployeeFilters } from '../features/employees/useEmployeeFilters';
 import { useEmployees } from '../features/employees/useEmployees';
 
@@ -28,9 +29,21 @@ export function EmployeesPage() {
         title="Employees"
         description="Find anyone, compare pay across countries and keep every salary change on record."
         actions={
-          <Button variant="contained" startIcon={<Plus size={18} aria-hidden />} onClick={() => setIsAdding(true)}>
-            Add employee
-          </Button>
+          <Stack direction="row" sx={{ gap: 1.5, flexWrap: 'wrap' }}>
+            <Button
+              variant="outlined"
+              color="inherit"
+              component="a"
+              href={toExportUrl(filters)}
+              download
+              startIcon={<DownloadSimple size={18} aria-hidden />}
+            >
+              Export CSV
+            </Button>
+            <Button variant="contained" startIcon={<Plus size={18} aria-hidden />} onClick={() => setIsAdding(true)}>
+              Add employee
+            </Button>
+          </Stack>
         }
       />
       {isAdding && (

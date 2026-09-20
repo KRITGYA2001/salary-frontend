@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_FILTERS, parseFilters, toApiParams, toSearchParams } from './employeeFilters';
+import { DEFAULT_FILTERS, parseFilters, toApiParams, toExportUrl, toSearchParams } from './employeeFilters';
 
 describe('parseFilters', () => {
   it('returns defaults for an empty query string', () => {
@@ -57,5 +57,17 @@ describe('toApiParams', () => {
       page: 1,
       size: 25,
     });
+  });
+});
+
+describe('toExportUrl', () => {
+  it('carries the active filters and sort but not the paging', () => {
+    const url = toExportUrl({ ...DEFAULT_FILTERS, country: 'IN', search: ' asha ', sort: 'salary', page: 4, size: 50 });
+
+    expect(url).toBe('/api/v1/employees/export.csv?search=asha&country=IN&sort=salary&direction=asc');
+  });
+
+  it('has no filters for the default view apart from the sort', () => {
+    expect(toExportUrl(DEFAULT_FILTERS)).toBe('/api/v1/employees/export.csv?sort=name&direction=asc');
   });
 });

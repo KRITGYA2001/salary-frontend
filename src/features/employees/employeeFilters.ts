@@ -1,4 +1,4 @@
-import type { QueryParams } from '../../api/client';
+import { API_BASE_PATH, type QueryParams, toQueryString } from '../../api/client';
 import type { EmployeeStatus } from '../../api/types';
 
 export const SEARCH_DEBOUNCE_MS = 300;
@@ -85,3 +85,7 @@ export function toFilterQuery(filters: EmployeeFilters): QueryParams {
 export function toApiParams(filters: EmployeeFilters): QueryParams {
   return { ...toFilterQuery(filters), page: filters.page, size: filters.size };
 }
+
+/** Download link for the current filters; the browser streams the file, so nothing is buffered in memory. */
+export const toExportUrl = (filters: EmployeeFilters): string =>
+  `${API_BASE_PATH}/employees/export.csv${toQueryString(toFilterQuery(filters))}`;

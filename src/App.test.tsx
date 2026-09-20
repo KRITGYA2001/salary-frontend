@@ -171,6 +171,27 @@ describe('Employees page', () => {
   });
 });
 
+describe('Employees page export', () => {
+  it('links the CSV export to the filters currently applied', async () => {
+    stubApi([ASHA]);
+    renderAt('/employees?country=IN&status=ACTIVE');
+
+    const link = await screen.findByRole('link', { name: 'Export CSV' });
+
+    expect(link).toHaveAttribute('href', expect.stringContaining('/employees/export.csv?'));
+    expect(link.getAttribute('href')).toContain('country=IN');
+    expect(link.getAttribute('href')).toContain('status=ACTIVE');
+    expect(link.getAttribute('href')).not.toContain('page=');
+  });
+
+  it('lets keyboard users skip past the navigation', async () => {
+    stubApi([ASHA]);
+    renderAt('/employees');
+
+    expect(await screen.findByRole('link', { name: 'Skip to content' })).toHaveAttribute('href', '#main-content');
+  });
+});
+
 describe('Employee detail page', () => {
   it('shows the employee and salary history with percentage change', async () => {
     renderAt('/employees/1');

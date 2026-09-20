@@ -7,6 +7,7 @@ import { colors, layout, radius } from '../theme/tokens';
 import { NAV_ITEMS } from './navigation';
 
 const APP_NAME = 'Salary Desk';
+const MAIN_CONTENT_ID = 'main-content';
 
 function Brand() {
   return (
@@ -85,6 +86,26 @@ export function AppShell() {
 
   return (
     <Box sx={{ minHeight: '100dvh', display: 'flex' }}>
+      <Box
+        component="a"
+        href={`#${MAIN_CONTENT_ID}`}
+        sx={{
+          position: 'fixed',
+          top: 8,
+          left: 8,
+          zIndex: theme.zIndex.tooltip,
+          px: 2,
+          py: 1,
+          borderRadius: `${radius.control}px`,
+          bgcolor: colors.surface,
+          color: colors.accent,
+          fontWeight: 600,
+          transform: 'translateY(-200%)',
+          '&:focus': { transform: 'none' },
+        }}
+      >
+        Skip to content
+      </Box>
       {isDesktop ? (
         <Box
           component="aside"
@@ -134,7 +155,10 @@ export function AppShell() {
       )}
       <Box
         component="main"
+        id={MAIN_CONTENT_ID}
+        tabIndex={-1}
         sx={{
+          outline: 'none',
           flex: 1,
           minWidth: 0,
           px: { xs: 2, md: 6 },
