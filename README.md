@@ -14,7 +14,7 @@ React 19 + TypeScript + Vite + MUI UI for the HR Manager ("Salary Desk"), on a w
 Server state uses TanStack Query (writes invalidate employee and insight queries). Field errors from the API's `details` are shown next to the inputs.
 
 - Requirements, design, tasks, test strategy and performance docs live in the `salary-backend` repo under `docs/`.
-- Live app: http://140.238.231.135/
+- Live app: URL is given in the submission email.
 
 ## Run locally
 
